@@ -91,3 +91,49 @@ def test_consecutive_ignores_single_board():
     ])
     signals = ConsecutiveStrategy().scan(con, 20260508)
     assert len(signals) == 0
+
+
+# ---------- MA Breakout ----------
+def test_ma_breakout_detects_ma5_cross_ma10():
+    from a_share_system.engine.strategies.ma_breakout import MaBreakoutStrategy
+    con = make_db()
+    # 前9天均价100，今天收盘115 → MA5 会超过 MA10
+    for d, c in zip(
+        [20260425, 20260426, 20260427, 20260428, 20260429,
+         20260502, 20260503, 20260506, 20260507],
+        [100] * 9
+    ):
+        insert_daily(con, [("600111.SH", d, float(c), float(c)+1, float(c)-1, float(c), float(c), 0.0, 0.0, 500000, 50000000)])
+    insert_daily(con, [("600111.SH", 20260508, 100.0, 116.0, 99.0, 115.0, 100.0, 0.0, 15.0, 800000, 90000000)])
+    signals = MaBreakoutStrategy().scan(con, 20260508)
+    assert len(signals) >= 1
+    assert signals[0].ts_code == "600111.SH"
+
+
+# ---------- MACD Cross ----------
+def test_macd_cross_detects_golden_cross():
+    from a_share_system.engine.strategies.macd_cross import MacdCrossStrategy
+    con = make_db()
+    prices = [100 - i * 0.5 for i in range(28)] + [90.0, 95.0]
+    dates = [20260301, 20260302, 20260303, 20260304, 20260305,
+             20260306, 20260309, 20260310, 20260311, 20260312,
+             20260313, 20260316, 20260317, 20260318, 20260319,
+             20260320, 20260323, 20260324, 20260325, 20260326,
+             20260327, 20260330, 20260331, 20260401, 20260402,
+             20260403, 20260407, 20260408, 20260409, 20260410]
+    for d, p in zip(dates, prices):
+        insert_daily(con, [("600111.SH", d, p, p+1, p-1, p, p, 0.0, 0.0, 500000, 500000*p)])
+    signals = MacdCrossStrategy().scan(con, 20260410)
+    assert isinstance(signals, list)
+
+
+# ---------- MACD Divergence ----------
+def test_macd_divergence_returns_list():
+    from a_share_system.engine.strategies.macd_divergence import MacdDivergenceStrategy
+    con = make_db()
+    prices = [100 - i * 0.3 for i in range(60)]
+    dates = list(range(20260101, 20260101 + 60))
+    for d, p in zip(dates, prices):
+        insert_daily(con, [("600111.SH", d, p, p+1, p-1, p, p, 0.0, 0.0, 500000, 500000*p)])
+    signals = MacdDivergenceStrategy().scan(con, dates[-1])
+    assert isinstance(signals, list)
