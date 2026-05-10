@@ -8,6 +8,7 @@ CREATE TABLE IF NOT EXISTS daily (
     low        DOUBLE,
     close      DOUBLE,
     pre_close  DOUBLE,
+    change     DOUBLE,
     pct_chg    DOUBLE,
     vol        DOUBLE,
     amount     DOUBLE,
