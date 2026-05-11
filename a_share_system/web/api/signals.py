@@ -1,24 +1,21 @@
 # a_share_system/web/api/signals.py
 import json
-import duckdb
 from fastapi import APIRouter, Query
+from a_share_system.data.db import get_web_conn
 
 router = APIRouter()
-_con: duckdb.DuckDBPyConnection = None
-
-
-def set_conn(con: duckdb.DuckDBPyConnection):
-    global _con
-    _con = con
 
 
 @router.get("/api/signals/{date}")
 def get_signals(date: int, strategy: str = Query(default="ALL")):
-    where = f"sig.trade_date = {date}"
+    con = get_web_conn()
+    params: list = [date]
+    where = "sig.trade_date = ?"
     if strategy != "ALL":
-        where += f" AND sig.strategy = '{strategy}'"
+        where += " AND sig.strategy = ?"
+        params.append(strategy)
 
-    rows = _con.execute(f"""
+    rows = con.execute(f"""
         SELECT sig.ts_code,
                COALESCE(sb.name, sig.ts_code) AS name,
                sig.strategy, sig.score, sig.triggered,
@@ -27,7 +24,7 @@ def get_signals(date: int, strategy: str = Query(default="ALL")):
         LEFT JOIN stock_basic sb ON sig.ts_code = sb.ts_code
         WHERE {where}
         ORDER BY sig.score DESC
-    """).fetchall()
+    """, params).fetchall()
 
     return [
         {

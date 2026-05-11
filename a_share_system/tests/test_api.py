@@ -1,4 +1,5 @@
 # a_share_system/tests/test_api.py
+from unittest.mock import patch
 from fastapi.testclient import TestClient
 import duckdb
 from a_share_system.data.db import init_schema
@@ -14,46 +15,54 @@ def make_test_db():
     return con
 
 
-def get_test_app(con):
+def make_client(con):
     from a_share_system.web.app import create_app
-    return create_app(con)
+    app = create_app(con)
+    # 让 get_web_conn() 在测试中返回同一个 in-memory 连接
+    client = TestClient(app)
+    client._test_con = con
+    return client
 
 
 def test_dates_endpoint():
     con = make_test_db()
-    app = get_test_app(con)
-    client = TestClient(app)
-    r = client.get("/api/dates")
-    assert r.status_code == 200
-    assert 20260508 in r.json()
+    with patch("a_share_system.web.api.market.get_web_conn", return_value=con):
+        from a_share_system.web.app import create_app
+        client = TestClient(create_app(con))
+        r = client.get("/api/dates")
+        assert r.status_code == 200
+        assert 20260508 in r.json()
 
 
 def test_market_endpoint():
     con = make_test_db()
-    app = get_test_app(con)
-    client = TestClient(app)
-    r = client.get("/api/market/20260508")
-    assert r.status_code == 200
-    data = r.json()
-    assert "indices" in data
-    assert "sentiment" in data
+    with patch("a_share_system.web.api.market.get_web_conn", return_value=con):
+        from a_share_system.web.app import create_app
+        client = TestClient(create_app(con))
+        r = client.get("/api/market/20260508")
+        assert r.status_code == 200
+        data = r.json()
+        assert "indices" in data
+        assert "sentiment" in data
 
 
 def test_signals_endpoint():
     con = make_test_db()
-    app = get_test_app(con)
-    client = TestClient(app)
-    r = client.get("/api/signals/20260508")
-    assert r.status_code == 200
-    signals = r.json()
-    assert isinstance(signals, list)
-    assert signals[0]["ts_code"] == "600111.SH"
+    with patch("a_share_system.web.api.signals.get_web_conn", return_value=con):
+        from a_share_system.web.app import create_app
+        client = TestClient(create_app(con))
+        r = client.get("/api/signals/20260508")
+        assert r.status_code == 200
+        sigs = r.json()
+        assert isinstance(sigs, list)
+        assert sigs[0]["ts_code"] == "600111.SH"
 
 
 def test_signals_filtered_by_strategy():
     con = make_test_db()
-    app = get_test_app(con)
-    client = TestClient(app)
-    r = client.get("/api/signals/20260508?strategy=RESONANCE")
-    assert r.status_code == 200
-    assert r.json() == []
+    with patch("a_share_system.web.api.signals.get_web_conn", return_value=con):
+        from a_share_system.web.app import create_app
+        client = TestClient(create_app(con))
+        r = client.get("/api/signals/20260508?strategy=RESONANCE")
+        assert r.status_code == 200
+        assert r.json() == []

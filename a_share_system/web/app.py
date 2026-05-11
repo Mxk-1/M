@@ -1,6 +1,6 @@
 # a_share_system/web/app.py
-import duckdb
 from pathlib import Path
+import duckdb
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
@@ -8,9 +8,6 @@ from a_share_system.web.api import market, signals
 
 
 def create_app(con: duckdb.DuckDBPyConnection) -> FastAPI:
-    market.set_conn(con)
-    signals.set_conn(con)
-
     app = FastAPI(title="A股交易系统")
     app.include_router(market.router)
     app.include_router(signals.router)
