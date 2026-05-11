@@ -12,17 +12,17 @@ def create_app(con: duckdb.DuckDBPyConnection) -> FastAPI:
     app.include_router(market.router)
     app.include_router(signals.router)
 
-    static_dir = Path(__file__).parent / "static"
+    static_dir = Path(__file__).parent / "frontend" / "dist"
     static_dir.mkdir(exist_ok=True)
-    app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
+    app.mount("/assets", StaticFiles(directory=str(static_dir / "assets")), name="assets")
 
-    @app.get("/")
+    @app.get("/", include_in_schema=False)
     def index():
         return FileResponse(str(static_dir / "index.html"))
 
-    @app.get("/favicon.ico", include_in_schema=False)
+    @app.get("/favicon.svg", include_in_schema=False)
     def favicon():
-        return FileResponse(str(static_dir / "favicon.ico"))
+        return FileResponse(str(static_dir / "favicon.svg"))
 
     return app
 
