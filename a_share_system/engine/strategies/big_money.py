@@ -50,8 +50,8 @@ class BigMoneyStrategy(BaseStrategy):
 
         signals = []
         for ts_code, name, pct_chg, open_p, close, amount, net_mf, buy_lg, sell_lg, avg_vol5 in rows:
-            # 大单净流入比例
-            net_ratio = net_mf / (amount * 10) if amount > 0 else 0  # amount 千元，net_mf 万元
+            # 大单净流入比例：net_mf 单位万元，amount 单位千元 → 统一成万元再做比
+            net_ratio = (net_mf * 10) / amount if amount > 0 else 0
             if net_ratio < _BIG_MONEY_RATIO:
                 continue
 
