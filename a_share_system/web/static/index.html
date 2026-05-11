@@ -139,7 +139,6 @@ td{padding:10px 10px;color:var(--text);vertical-align:middle}
 .tag-m{background:rgba(255,159,10,.14);color:#ff9f0a}
 .board-badge{display:inline-block;background:rgba(255,159,10,.18);color:#ff9f0a;border-radius:5px;padding:2px 6px;font-size:10px;font-weight:700}
 .loading{color:var(--text-2);text-align:center;padding:40px;font-size:14px}
-/* 行可点击 */
 tbody tr{cursor:pointer}
 
 /* ── K线 Modal ── */
@@ -357,7 +356,7 @@ function renderMarket(){
       const u=r.pct_chg>0,d=r.pct_chg<0;
       const cls=u?'up':d?'dn':'flat';
       const sign=u?'+':''
-      return`<tr onclick="openKline('${r.ts_code}','${r.name}')">
+      return`<tr data-code="${r.ts_code}" data-name="${r.name.replace(/"/g,'&quot;')}">
         <td style="color:var(--text-2);font-size:12px">${i+1}</td>
         <td><div class="sn">${r.name}</div><div class="sc">${r.ts_code}</div></td>
         <td class="${cls}" style="font-weight:600;font-variant-numeric:tabular-nums">${sign}${r.pct_chg.toFixed(2)}%</td>
@@ -383,7 +382,7 @@ function renderSignals(id){
       const tags=s.triggered.map(t=>`<span class="tag tag-${TC[t]||'m'}">${TN[t]||t}</span>`).join('');
       const board=s.boards>=2?`<span class="board-badge">${s.boards}板</span>`:`<span style="color:var(--text-2)">—</span>`;
       const u=s.pct_chg>=0;
-      return`<tr onclick="openKline('${s.ts_code}','${s.name}')">
+      return`<tr data-code="${s.ts_code}" data-name="${s.name.replace(/"/g,'&quot;')}">
         <td style="color:var(--text-2);font-size:12px">${i+1}</td>
         <td><div class="sn">${s.name}</div><div class="sc">${s.ts_code}</div></td>
         <td class="${u?'up':'dn'}" style="font-weight:600;font-variant-numeric:tabular-nums">${u?'+':''}${s.pct_chg.toFixed(2)}%</td>
@@ -435,6 +434,13 @@ function renderSectors(sectors){
     </div>`;
   }).join('');
 }
+
+/* ── 行点击事件委托 ── */
+document.addEventListener('click', e => {
+  const tr = e.target.closest('tr[data-code]');
+  if (!tr) return;
+  openKline(tr.dataset.code, tr.dataset.name);
+});
 
 /* ── K线图 ── */
 let klineData=[], klineDays=60, klineCode='', klineName='';
