@@ -7,6 +7,8 @@
 <style>
 /* ── 主题变量 ── */
 :root {
+  --up: #30d158;
+  --dn: #ff453a;
   --bg:           #f5f5f7;
   --bg-sidebar:   #ffffff;
   --bg-card:      rgba(0,0,0,.04);
@@ -82,7 +84,9 @@ body{font-family:-apple-system,"SF Pro Display","SF Pro Text",sans-serif;backgro
 .idx-name{font-size:12px;color:var(--text-2)}
 .idx-price{font-size:14px;font-weight:600;font-variant-numeric:tabular-nums}
 .idx-chg{font-size:11px;font-variant-numeric:tabular-nums;margin-top:2px}
-.up{color:#30d158}.dn{color:#ff453a}.flat{color:var(--text-2)}
+/* A股传统：红涨绿跌 */
+[data-color="rg"]{--up:#ff453a;--dn:#30d158}
+.up{color:var(--up)}.dn{color:var(--dn)}.flat{color:var(--text-2)}
 .sentiment-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
 .s-chip{background:var(--bg-card);border:1px solid var(--border-card);border-radius:8px;padding:7px 4px;text-align:center}
 .s-val{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
@@ -163,6 +167,10 @@ tbody tr{cursor:pointer}
   <div class="titlebar-title">A股交易系统</div>
   <div class="titlebar-right">
     <span class="titlebar-date" id="dateLabel">加载中...</span>
+    <button class="theme-btn" id="colorBtn" onclick="toggleColor()">
+      <span id="colorIcon">🟢</span>
+      <span id="colorLabel">绿涨红跌</span>
+    </button>
     <button class="theme-btn" onclick="cycleTheme()">
       <span id="themeIcon">🌗</span>
       <span id="themeLabel">自动</span>
@@ -275,6 +283,22 @@ function applyTheme(t){
 }
 function cycleTheme(){themeIdx=(themeIdx+1)%THEMES.length;const t=THEMES[themeIdx];localStorage.setItem('theme',t);applyTheme(t);}
 (function(){const s=localStorage.getItem('theme')||'auto';themeIdx=Math.max(0,THEMES.indexOf(s));applyTheme(s);})();
+
+/* ── 涨跌色 ── */
+function applyColor(mode){
+  // mode: 'gr'=绿涨红跌(默认), 'rg'=红涨绿跌
+  document.documentElement.setAttribute('data-color', mode);
+  const isRG = mode==='rg';
+  document.getElementById('colorIcon').textContent  = isRG ? '🔴' : '🟢';
+  document.getElementById('colorLabel').textContent = isRG ? '红涨绿跌' : '绿涨红跌';
+}
+function toggleColor(){
+  const cur = document.documentElement.getAttribute('data-color')||'gr';
+  const next = cur==='gr'?'rg':'gr';
+  localStorage.setItem('colorMode', next);
+  applyColor(next);
+}
+(function(){applyColor(localStorage.getItem('colorMode')||'gr');})();
 
 /* ── Tab 结构 ── */
 const SIGNAL_TABS=[
@@ -411,10 +435,10 @@ function renderIndices(indices){
 }
 function renderSentiment(s){
   const items=[
-    {val:s.up,lbl:'上涨',style:'color:#30d158'},
-    {val:s.down,lbl:'下跌',style:'color:#ff453a'},
+    {val:s.up,lbl:'上涨',style:'color:var(--up)'},
+    {val:s.down,lbl:'下跌',style:'color:var(--dn)'},
     {val:s.limit_up,lbl:'涨停',style:'color:#ff9f0a'},
-    {val:s.limit_down,lbl:'跌停',style:'color:#ff453a'},
+    {val:s.limit_down,lbl:'跌停',style:'color:var(--dn)'},
     {val:s.max_boards,lbl:'连板高',style:'color:#bf5af2'},
     {val:s.resonance_count,lbl:'共振',style:'color:#0a84ff'},
   ];
@@ -509,9 +533,10 @@ function drawKline(){
   ctx.clearRect(0,0,W,H);
 
   // 颜色
+  const cs=getComputedStyle(document.documentElement);
   const C={
-    up:   '#30d158',
-    dn:   '#ff453a',
+    up:   cs.getPropertyValue('--up').trim()||'#30d158',
+    dn:   cs.getPropertyValue('--dn').trim()||'#ff453a',
     grid: isDark?'rgba(255,255,255,.06)':'rgba(0,0,0,.06)',
     text: isDark?'#636366':'#8e8e93',
     bg:   isDark?'#1c1c1e':'#ffffff',
@@ -640,8 +665,8 @@ function drawCross(e,data,W,H,PAD,priceH,VOL_H,pHigh,pLow,maxVol,isDark,toX,toY,
     `开 <b>${d.open.toFixed(2)}</b> &nbsp;`+
     `高 <b>${d.high.toFixed(2)}</b> &nbsp;`+
     `低 <b>${d.low.toFixed(2)}</b> &nbsp;`+
-    `收 <b style="color:${d.close>=d.open?'#30d158':'#ff453a'}">${d.close.toFixed(2)}</b> &nbsp;`+
-    `<span style="color:${d.pct_chg>=0?'#30d158':'#ff453a'}">${sign}${d.pct_chg.toFixed(2)}%</span> &nbsp;`+
+    `收 <b style="color:${d.close>=d.open?'var(--up)':'var(--dn)'}">${d.close.toFixed(2)}</b> &nbsp;`+
+    `<span style="color:${d.pct_chg>=0?'var(--up)':'var(--dn)'}">${sign}${d.pct_chg.toFixed(2)}%</span> &nbsp;`+
     `量 ${fmt(d.vol)}`;
 }
 
