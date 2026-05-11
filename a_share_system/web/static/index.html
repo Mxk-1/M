@@ -1,74 +1,145 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="auto">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>A股交易系统</title>
 <style>
+/* ── 主题变量 ── */
+:root {
+  --bg:          #f5f5f7;
+  --bg-sidebar:  #ffffff;
+  --bg-card:     rgba(0,0,0,.04);
+  --bg-card2:    rgba(0,0,0,.03);
+  --bg-tab-bar:  #f0f0f2;
+  --bg-tab-act:  #ffffff;
+  --bg-table:    #ffffff;
+  --bg-row-hover:rgba(0,0,0,.03);
+  --border:      rgba(0,0,0,.08);
+  --border-card: rgba(0,0,0,.07);
+  --text:        #1d1d1f;
+  --text-2:      #6e6e73;
+  --text-3:      #aeaeb2;
+  --tab-act-bdr: rgba(0,0,0,.1);
+  --score-col:   #5e5ce6;
+  --s-name-col:  rgba(0,0,0,.65);
+}
+[data-theme="dark"], .dark-mode {
+  --bg:          #000000;
+  --bg-sidebar:  #141414;
+  --bg-card:     rgba(255,255,255,.04);
+  --bg-card2:    rgba(255,255,255,.03);
+  --bg-tab-bar:  #1c1c1e;
+  --bg-tab-act:  #2c2c2e;
+  --bg-table:    #2c2c2e;
+  --bg-row-hover:rgba(255,255,255,.04);
+  --border:      rgba(255,255,255,.06);
+  --border-card: rgba(255,255,255,.06);
+  --text:        #f5f5f7;
+  --text-2:      #636366;
+  --text-3:      #3a3a3c;
+  --tab-act-bdr: rgba(255,255,255,.08);
+  --score-col:   #c7d2fe;
+  --s-name-col:  rgba(255,255,255,.75);
+}
+@media (prefers-color-scheme: dark) {
+  [data-theme="auto"] {
+    --bg:          #000000;
+    --bg-sidebar:  #141414;
+    --bg-card:     rgba(255,255,255,.04);
+    --bg-card2:    rgba(255,255,255,.03);
+    --bg-tab-bar:  #1c1c1e;
+    --bg-tab-act:  #2c2c2e;
+    --bg-table:    #2c2c2e;
+    --bg-row-hover:rgba(255,255,255,.04);
+    --border:      rgba(255,255,255,.06);
+    --border-card: rgba(255,255,255,.06);
+    --text:        #f5f5f7;
+    --text-2:      #636366;
+    --text-3:      #3a3a3c;
+    --tab-act-bdr: rgba(255,255,255,.08);
+    --score-col:   #c7d2fe;
+    --s-name-col:  rgba(255,255,255,.75);
+  }
+}
+
+/* ── 基础 ── */
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,"SF Pro Display","SF Pro Text",sans-serif;background:#000;color:#f5f5f7;min-height:100vh;display:flex;flex-direction:column}
-.titlebar{background:rgba(28,28,30,.95);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,.06);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
-.titlebar-dots{display:flex;gap:6px}
-.dot{width:12px;height:12px;border-radius:50%}
-.dot-r{background:#ff5f57}.dot-y{background:#febc2e}.dot-g{background:#28c840}
-.titlebar-title{font-size:14px;font-weight:600;color:#f5f5f7;margin-left:12px}
-.titlebar-date{font-size:12px;color:#636366;font-variant-numeric:tabular-nums}
+body{font-family:-apple-system,"SF Pro Display","SF Pro Text",sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;transition:background .2s,color .2s}
+
+/* ── 顶栏 ── */
+.titlebar{background:var(--bg-sidebar);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);padding:12px 20px;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.titlebar-title{font-size:15px;font-weight:600;color:var(--text)}
+.titlebar-right{display:flex;align-items:center;gap:14px}
+.titlebar-date{font-size:12px;color:var(--text-2);font-variant-numeric:tabular-nums}
+.theme-toggle{background:var(--bg-card);border:1px solid var(--border-card);border-radius:20px;padding:4px 10px;cursor:pointer;font-size:13px;color:var(--text-2);display:flex;align-items:center;gap:5px;transition:background .15s,color .15s}
+.theme-toggle:hover{color:var(--text);background:var(--bg-card2)}
+.theme-icon{font-size:14px;line-height:1}
+
+/* ── 布局 ── */
 .body{display:flex;flex:1;overflow:hidden}
-.sidebar{width:240px;flex-shrink:0;background:#141414;border-right:1px solid rgba(255,255,255,.06);padding:20px 16px;display:flex;flex-direction:column;gap:20px;overflow-y:auto}
-.section-label{font-size:10px;font-weight:600;color:#636366;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
-.index-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
-.idx-name{font-size:12px;color:#aeaeb2}
-.idx-price{font-size:14px;font-weight:600;color:#f5f5f7;font-variant-numeric:tabular-nums}
+.sidebar{width:240px;flex-shrink:0;background:var(--bg-sidebar);border-right:1px solid var(--border);padding:18px 14px;display:flex;flex-direction:column;gap:18px;overflow-y:auto;transition:background .2s}
+
+/* ── 侧栏组件 ── */
+.section-label{font-size:10px;font-weight:600;color:var(--text-2);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.index-card{background:var(--bg-card);border:1px solid var(--border-card);border-radius:10px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;transition:background .2s}
+.idx-name{font-size:12px;color:var(--text-2)}
+.idx-price{font-size:14px;font-weight:600;color:var(--text);font-variant-numeric:tabular-nums}
 .idx-chg{font-size:11px;font-variant-numeric:tabular-nums}
 .up{color:#30d158}.down{color:#ff453a}
 .sentiment-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:5px}
-.s-chip{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.06);border-radius:8px;padding:7px 4px;text-align:center}
-.s-val{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
-.s-lbl{font-size:9px;color:#636366;margin-top:2px}
+.s-chip{background:var(--bg-card);border:1px solid var(--border-card);border-radius:8px;padding:7px 4px;text-align:center;transition:background .2s}
+.s-val{font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--text)}
+.s-lbl{font-size:9px;color:var(--text-2);margin-top:2px}
 .sector-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}
 .s-cell{border-radius:7px;padding:6px 8px;font-size:10px;display:flex;justify-content:space-between;align-items:center}
-.s-up-strong{background:rgba(48,209,88,.18);border:1px solid rgba(48,209,88,.25)}
-.s-up-mid{background:rgba(48,209,88,.10);border:1px solid rgba(48,209,88,.15)}
-.s-down-mid{background:rgba(255,69,58,.10);border:1px solid rgba(255,69,58,.15)}
-.s-down-strong{background:rgba(255,69,58,.18);border:1px solid rgba(255,69,58,.25)}
+.s-up-strong{background:rgba(48,209,88,.15);border:1px solid rgba(48,209,88,.22)}
+.s-up-mid{background:rgba(48,209,88,.07);border:1px solid rgba(48,209,88,.12)}
+.s-down-mid{background:rgba(255,69,58,.07);border:1px solid rgba(255,69,58,.12)}
+.s-down-strong{background:rgba(255,69,58,.15);border:1px solid rgba(255,69,58,.22)}
 .s-pct{font-weight:600;font-variant-numeric:tabular-nums}
+
+/* ── 主区 ── */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden}
-.tabs-bar{padding:16px 20px 0;display:flex;gap:4px;border-bottom:1px solid rgba(255,255,255,.06);background:#1c1c1e;overflow-x:auto;flex-shrink:0}
-.tab{padding:8px 14px;font-size:12px;font-weight:500;color:#636366;border-radius:8px 8px 0 0;cursor:pointer;white-space:nowrap;border:1px solid transparent;border-bottom:none;position:relative;bottom:-1px;transition:all .15s}
-.tab:hover{color:#aeaeb2}
-.tab.active{color:#f5f5f7;background:#2c2c2e;border-color:rgba(255,255,255,.08);border-bottom-color:#2c2c2e}
-.badge{display:inline-block;background:rgba(255,255,255,.08);border-radius:10px;padding:0 5px;font-size:10px;margin-left:4px;font-variant-numeric:tabular-nums}
-.tab.active .badge{background:rgba(10,132,255,.25);color:#0a84ff}
-.table-area{flex:1;background:#2c2c2e;overflow-y:auto;padding:16px 20px}
-.summary-bar{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+.tabs-bar{padding:14px 18px 0;display:flex;gap:4px;border-bottom:1px solid var(--border);background:var(--bg-tab-bar);overflow-x:auto;flex-shrink:0;transition:background .2s}
+.tab{padding:7px 13px;font-size:12px;font-weight:500;color:var(--text-2);border-radius:7px 7px 0 0;cursor:pointer;white-space:nowrap;border:1px solid transparent;border-bottom:none;position:relative;bottom:-1px;transition:all .15s}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--text);background:var(--bg-tab-act);border-color:var(--tab-act-bdr);border-bottom-color:var(--bg-tab-act)}
+.badge{display:inline-block;background:var(--bg-card);border-radius:10px;padding:0 5px;font-size:10px;margin-left:4px;font-variant-numeric:tabular-nums}
+.tab.active .badge{background:rgba(10,132,255,.2);color:#0a84ff}
+.table-area{flex:1;background:var(--bg-table);overflow-y:auto;padding:14px 18px;transition:background .2s}
+.summary-bar{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+
+/* ── 表格 ── */
 table{width:100%;border-collapse:collapse;font-size:13px}
-thead tr{border-bottom:1px solid rgba(255,255,255,.06)}
-th{padding:8px 10px;text-align:left;font-size:10px;font-weight:600;color:#636366;letter-spacing:.05em;text-transform:uppercase}
+thead tr{border-bottom:1px solid var(--border)}
+th{padding:8px 10px;text-align:left;font-size:10px;font-weight:600;color:var(--text-2);letter-spacing:.05em;text-transform:uppercase}
 th:last-child,td:last-child{text-align:right}
-tbody tr{border-bottom:1px solid rgba(255,255,255,.04);cursor:pointer;transition:background .1s}
-tbody tr:hover{background:rgba(255,255,255,.04)}
+tbody tr{border-bottom:1px solid var(--border);cursor:pointer;transition:background .1s}
+tbody tr:hover{background:var(--bg-row-hover)}
 tbody tr:last-child{border-bottom:none}
-td{padding:11px 10px;color:#e5e5ea;vertical-align:middle}
-.sn{font-weight:600;color:#f5f5f7;font-size:13px}
-.sc{font-size:10px;color:#636366;margin-top:1px;font-family:"SF Mono",monospace}
+td{padding:11px 10px;color:var(--text);vertical-align:middle}
+.sn{font-weight:600;font-size:13px}
+.sc{font-size:10px;color:var(--text-2);margin-top:1px;font-family:"SF Mono",monospace}
 .tag{display:inline-block;padding:2px 7px;border-radius:5px;font-size:10px;font-weight:500;margin-right:3px}
-.tag-r{background:rgba(191,90,242,.2);color:#bf5af2}
-.tag-l{background:rgba(255,69,58,.15);color:#ff6961}
-.tag-v{background:rgba(10,132,255,.15);color:#0a84ff}
-.tag-m{background:rgba(255,159,10,.15);color:#ff9f0a}
-.board-badge{display:inline-block;background:rgba(255,159,10,.2);color:#ff9f0a;border-radius:5px;padding:2px 6px;font-size:10px;font-weight:700}
-.loading{color:#636366;text-align:center;padding:40px;font-size:14px}
+.tag-r{background:rgba(191,90,242,.18);color:#bf5af2}
+.tag-l{background:rgba(255,69,58,.14);color:#ff6961}
+.tag-v{background:rgba(10,132,255,.14);color:#0a84ff}
+.tag-m{background:rgba(255,159,10,.14);color:#ff9f0a}
+.board-badge{display:inline-block;background:rgba(255,159,10,.18);color:#ff9f0a;border-radius:5px;padding:2px 6px;font-size:10px;font-weight:700}
+.loading{color:var(--text-2);text-align:center;padding:40px;font-size:14px}
 </style>
 </head>
 <body>
 <div class="titlebar">
-  <div style="display:flex;align-items:center">
-    <div class="titlebar-dots">
-      <div class="dot dot-r"></div><div class="dot dot-y"></div><div class="dot dot-g"></div>
-    </div>
-    <div class="titlebar-title">A股交易系统</div>
+  <div class="titlebar-title">A股交易系统</div>
+  <div class="titlebar-right">
+    <span class="titlebar-date" id="dateLabel">加载中...</span>
+    <button class="theme-toggle" id="themeBtn" onclick="cycleTheme()">
+      <span class="theme-icon" id="themeIcon">🌗</span>
+      <span id="themeLabel">自动</span>
+    </button>
   </div>
-  <div class="titlebar-date" id="dateLabel">加载中...</div>
 </div>
 <div class="body">
   <div class="sidebar">
@@ -97,32 +168,72 @@ td{padding:11px 10px;color:#e5e5ea;vertical-align:middle}
   </div>
 </div>
 <script>
+/* ── 主题切换 ── */
+const THEMES = ['auto','light','dark'];
+const ICONS  = {auto:'🌗', light:'☀️', dark:'🌙'};
+const LABELS = {auto:'自动', light:'浅色', dark:'深色'};
+let themeIdx = 0;
+
+function applyTheme(t) {
+  const html = document.documentElement;
+  if (t === 'auto') {
+    html.setAttribute('data-theme','auto');
+    html.classList.remove('dark-mode');
+  } else if (t === 'dark') {
+    html.setAttribute('data-theme','dark');
+    html.classList.add('dark-mode');
+  } else {
+    html.setAttribute('data-theme','light');
+    html.classList.remove('dark-mode');
+  }
+  document.getElementById('themeIcon').textContent  = ICONS[t];
+  document.getElementById('themeLabel').textContent = LABELS[t];
+}
+
+function cycleTheme() {
+  themeIdx = (themeIdx + 1) % THEMES.length;
+  const t = THEMES[themeIdx];
+  localStorage.setItem('theme', t);
+  applyTheme(t);
+}
+
+(function initTheme() {
+  const saved = localStorage.getItem('theme') || 'auto';
+  themeIdx = THEMES.indexOf(saved);
+  if (themeIdx < 0) themeIdx = 0;
+  applyTheme(saved);
+})();
+
+/* ── 数据 ── */
 const STRATEGIES=[
-  {id:'RESONANCE',label:'⚡ 共振精选'},
-  {id:'LIMIT_UP',label:'🔥 N字涨停'},
-  {id:'VOLUME_SPIKE',label:'💥 突然爆量'},
-  {id:'CONSECUTIVE',label:'👑 连板龙头'},
-  {id:'MA_BREAKOUT',label:'📈 均线突破'},
-  {id:'MACD_CROSS',label:'📊 MACD金叉'},
-  {id:'MACD_DIVERGENCE',label:'🔻 底背离'},
+  {id:'RESONANCE',     label:'共振精选'},
+  {id:'LIMIT_UP',      label:'N字涨停'},
+  {id:'VOLUME_SPIKE',  label:'突然爆量'},
+  {id:'CONSECUTIVE',   label:'连板龙头'},
+  {id:'MA_BREAKOUT',   label:'均线突破'},
+  {id:'MACD_CROSS',    label:'MACD金叉'},
+  {id:'MACD_DIVERGENCE',label:'底背离'},
 ];
-let allSignals=[],currentStrategy='RESONANCE';
+let allSignals=[], currentStrategy='RESONANCE';
+
 async function init(){
-  const dates=await fetch('/api/dates').then(r=>r.json());
-  const date=dates[0];
-  document.getElementById('dateLabel').textContent=`${String(date).slice(0,4)}-${String(date).slice(4,6)}-${String(date).slice(6)} 盘后`;
-  const[market,sectors,signals]=await Promise.all([
+  const dates = await fetch('/api/dates').then(r=>r.json());
+  const date  = dates[0];
+  const d = String(date);
+  document.getElementById('dateLabel').textContent=`${d.slice(0,4)}-${d.slice(4,6)}-${d.slice(6)} 盘后`;
+  const [market, sectors, signals] = await Promise.all([
     fetch(`/api/market/${date}`).then(r=>r.json()),
     fetch(`/api/sectors/${date}`).then(r=>r.json()),
     fetch(`/api/signals/${date}`).then(r=>r.json()),
   ]);
-  allSignals=signals;
+  allSignals = signals;
   renderIndices(market.indices);
   renderSentiment(market.sentiment);
   renderSectors(sectors);
   renderTabs(signals);
   renderTable(currentStrategy);
 }
+
 function renderIndices(indices){
   document.getElementById('indices').innerHTML=indices.map(idx=>`
     <div class="index-card">
@@ -133,31 +244,34 @@ function renderIndices(indices){
       </div>
     </div>`).join('');
 }
+
 function renderSentiment(s){
   const items=[
-    {val:s.up,lbl:'上涨',cls:'up'},
-    {val:s.down,lbl:'下跌',cls:'down'},
-    {val:s.limit_up,lbl:'涨停',cls:'',style:'color:#ff9f0a'},
-    {val:s.limit_down,lbl:'跌停',cls:'down'},
-    {val:s.max_boards,lbl:'连板高',cls:'',style:'color:#bf5af2'},
-    {val:s.resonance_count,lbl:'共振',cls:'',style:'color:#bf5af2'},
+    {val:s.up,       lbl:'上涨', style:'color:#30d158'},
+    {val:s.down,     lbl:'下跌', style:'color:#ff453a'},
+    {val:s.limit_up, lbl:'涨停', style:'color:#ff9f0a'},
+    {val:s.limit_down,lbl:'跌停',style:'color:#ff453a'},
+    {val:s.max_boards,lbl:'连板高',style:'color:#bf5af2'},
+    {val:s.resonance_count,lbl:'共振',style:'color:#0a84ff'},
   ];
   document.getElementById('sentiment').innerHTML=items.map(i=>`
     <div class="s-chip">
-      <div class="s-val ${i.cls}"${i.style?` style="${i.style}"`:''}>${i.val}</div>
+      <div class="s-val" style="${i.style}">${i.val}</div>
       <div class="s-lbl">${i.lbl}</div>
     </div>`).join('');
 }
+
 function renderSectors(sectors){
-  const shown=[...sectors.slice(0,6),...sectors.slice(-4)].slice(0,8);
+  const shown=[...sectors.slice(0,5),...sectors.slice(-3)].slice(0,8);
   document.getElementById('sectors').innerHTML=shown.map(s=>{
     const cls=s.pct_chg>=2?'s-up-strong':s.pct_chg>=0?'s-up-mid':s.pct_chg>=-2?'s-down-mid':'s-down-strong';
     return`<div class="s-cell ${cls}">
-      <span style="color:rgba(255,255,255,.75)">${s.name}</span>
+      <span style="color:var(--s-name-col)">${s.name}</span>
       <span class="s-pct ${s.pct_chg>=0?'up':'down'}">${s.pct_chg>=0?'+':''}${s.pct_chg.toFixed(1)}%</span>
     </div>`;
   }).join('');
 }
+
 function renderTabs(signals){
   const counts={};
   signals.forEach(s=>counts[s.strategy]=(counts[s.strategy]||0)+1);
@@ -166,11 +280,16 @@ function renderTabs(signals){
       ${st.label} <span class="badge">${counts[st.id]||0}</span>
     </div>`).join('');
 }
+
 function switchTab(id){
   currentStrategy=id;
   renderTabs(allSignals);
   renderTable(id);
 }
+
+const TN={LIMIT_UP:'N字涨停',VOLUME_SPIKE:'爆量',MA_BREAKOUT:'均线',MACD_CROSS:'MACD',MACD_DIVERGENCE:'底背离',CONSECUTIVE:'连板',RESONANCE:'共振'};
+const TC={LIMIT_UP:'l',VOLUME_SPIKE:'v',MA_BREAKOUT:'m',MACD_CROSS:'m',MACD_DIVERGENCE:'m',CONSECUTIVE:'m',RESONANCE:'r'};
+
 function renderTable(id){
   const filtered=id==='ALL'?allSignals:allSignals.filter(s=>s.strategy===id);
   document.getElementById('thead').innerHTML=`<tr><th>#</th><th>股票</th><th>涨幅</th><th>量比</th><th>连板</th><th>触发策略</th><th>评分</th></tr>`;
@@ -178,21 +297,20 @@ function renderTable(id){
     ?`<tr><td colspan="7" class="loading">暂无信号</td></tr>`
     :filtered.map((s,i)=>{
       const tags=s.triggered.map(t=>`<span class="tag tag-${TC[t]||'m'}">${TN[t]||t}</span>`).join('');
-      const board=s.boards>=2?`<span class="board-badge">${s.boards}板</span>`:'<span style="color:#636366">—</span>';
+      const board=s.boards>=2?`<span class="board-badge">${s.boards}板</span>`:`<span style="color:var(--text-2)">—</span>`;
       const u=s.pct_chg>=0;
       return`<tr>
-        <td style="color:#aeaeb2;font-size:12px">${i+1}</td>
+        <td style="color:var(--text-2);font-size:12px">${i+1}</td>
         <td><div class="sn">${s.name}</div><div class="sc">${s.ts_code}</div></td>
         <td class="${u?'up':'down'}" style="font-weight:600;font-variant-numeric:tabular-nums">${u?'+':''}${s.pct_chg.toFixed(2)}%</td>
-        <td>${s.vol_ratio.toFixed(2)}x</td>
+        <td style="font-variant-numeric:tabular-nums">${s.vol_ratio.toFixed(2)}x</td>
         <td>${board}</td>
         <td>${tags}</td>
-        <td style="font-weight:700;color:#c7d2fe">${s.score.toFixed(1)}</td>
+        <td style="font-weight:700;color:var(--score-col)">${s.score.toFixed(1)}</td>
       </tr>`;
     }).join('');
 }
-const TN={LIMIT_UP:'N字涨停',VOLUME_SPIKE:'爆量',MA_BREAKOUT:'均线',MACD_CROSS:'MACD',MACD_DIVERGENCE:'底背离',CONSECUTIVE:'连板',RESONANCE:'共振'};
-const TC={LIMIT_UP:'l',VOLUME_SPIKE:'v',MA_BREAKOUT:'m',MACD_CROSS:'m',MACD_DIVERGENCE:'m',CONSECUTIVE:'m',RESONANCE:'r'};
+
 init();
 </script>
 </body>
