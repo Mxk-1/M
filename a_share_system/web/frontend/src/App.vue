@@ -10,15 +10,31 @@ import KlineModal from './components/KlineModal.vue'
 const { date, indices, sentiment, sectors, signals, stocks, loading, load } = useMarketData()
 
 const SIGNAL_TABS = [
-  { id: 'RESONANCE',       label: '共振精选' },
-  { id: 'LIMIT_UP',        label: 'N字涨停' },
-  { id: 'VOLUME_SPIKE',    label: '突然爆量' },
-  { id: 'CONSECUTIVE',     label: '连板龙头' },
-  { id: 'MA_BREAKOUT',     label: '均线突破' },
-  { id: 'MACD_CROSS',      label: 'MACD金叉' },
-  { id: 'MACD_DIVERGENCE', label: '底背离' },
+  { id: 'RESONANCE',       label: '共振精选',  tip: '同一只股票同时触发 2 个及以上策略信号，多重共鸣说明它当天被市场从多个维度认可，综合得分最高的票出现在这里。' },
+  { id: 'LIMIT_UP',        label: 'N字涨停',   tip: '当日涨幅 ≥ 9.5% 且有封单确认涨停。N 字形态指昨日涨停、今日低开再度封板，是主力二次发动的强势信号。' },
+  { id: 'VOLUME_SPIKE',    label: '突然爆量',   tip: '今日成交量是近 5 日均量的 3 倍以上，且股价上涨超 3%。异常放量通常意味着大资金介入，是行情启动的早期预警。' },
+  { id: 'CONSECUTIVE',     label: '连板龙头',   tip: '连续 2 天及以上涨停的股票。连板本身就是最强的资金集中信号，市场用真金白银投票，龙头效应明显。' },
+  { id: 'MA_BREAKOUT',     label: '均线突破',   tip: '5 日均线上穿 10 日均线（短期趋势转强），或股价站上 60 日均线（中期趋势扭转）。均线是市场平均持仓成本，突破意味着多方占优。' },
+  { id: 'MACD_CROSS',      label: 'MACD金叉',  tip: 'DIF 线从下方穿越 DEA 线形成金叉。零轴上方金叉是强势延续，零轴下方金叉是底部反转信号，两类均收录。' },
+  { id: 'MACD_DIVERGENCE', label: '底背离',     tip: '近 30 日内股价创出新低，但 MACD 的 DIF 指标没有同步新低。价格与动能出现背离，意味着下跌动力衰竭，可能是阶段性底部。' },
 ]
-const ALL_TABS = [{ id: 'MARKET', label: '行情浏览', isMarket: true }, ...SIGNAL_TABS]
+const ALL_TABS = [{ id: 'MARKET', label: '行情浏览', isMarket: true, tip: '当日全市场 A 股行情，支持按涨跌、板块、交易所筛选，点击任意个股查看 K 线图。' }, ...SIGNAL_TABS]
+
+// Tooltip
+const tooltip = ref({ visible: false, text: '', x: 0, y: 0 })
+let tooltipTimer = null
+function showTip(e, text) {
+  if (!text) return
+  clearTimeout(tooltipTimer)
+  tooltipTimer = setTimeout(() => {
+    const r = e.target.getBoundingClientRect()
+    tooltip.value = { visible: true, text, x: r.left + r.width / 2, y: r.bottom + 8 }
+  }, 600)
+}
+function hideTip() {
+  clearTimeout(tooltipTimer)
+  tooltip.value.visible = false
+}
 const activeTab = ref('MARKET')
 
 const signalCounts = computed(() => {
@@ -54,10 +70,20 @@ onMounted(load)
         <div class="tabs-bar">
           <div v-for="t in ALL_TABS" :key="t.id"
             class="tab" :class="{ active: activeTab === t.id }"
-            @click="activeTab = t.id">
+            @click="activeTab = t.id"
+            @mouseenter="e => showTip(e, t.tip)"
+            @mouseleave="hideTip">
             {{ t.label }}<span class="badge">{{ tabCount(t) }}</span>
           </div>
         </div>
+
+        <!-- 全局 Tooltip -->
+        <Teleport to="body">
+          <div v-if="tooltip.visible" class="tab-tooltip"
+            :style="{ left: tooltip.x + 'px', top: tooltip.y + 'px' }">
+            {{ tooltip.text }}
+          </div>
+        </Teleport>
         <MarketTable v-if="activeTab === 'MARKET'" :stocks="stocks" @open-kline="openKline" />
         <SignalTable v-else :signals="signals" :strategy="activeTab" @open-kline="openKline" />
       </div>
@@ -67,6 +93,24 @@ onMounted(load)
 </template>
 
 <style>
+/* Tooltip */
+.tab-tooltip {
+  position: fixed;
+  transform: translateX(-50%);
+  z-index: 200;
+  max-width: 280px;
+  background: var(--bg-sidebar);
+  border: 1px solid var(--border-card);
+  border-radius: 10px;
+  padding: 10px 14px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-2);
+  box-shadow: 0 8px 32px rgba(0,0,0,.2);
+  pointer-events: none;
+  white-space: normal;
+}
+
 /* 全局 tabs 样式放这里（不 scoped） */
 .tabs-bar {
   padding: 14px 18px 0; display: flex; gap: 4px;
