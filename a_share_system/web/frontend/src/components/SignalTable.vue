@@ -7,8 +7,8 @@ const emit = defineEmits(['open-kline'])
 const search = ref('')
 const board  = ref('ALL')
 
-const TN = { LIMIT_UP:'N字涨停', VOLUME_SPIKE:'爆量', MA_BREAKOUT:'均线', MACD_CROSS:'MACD', MACD_DIVERGENCE:'底背离', CONSECUTIVE:'连板', RESONANCE:'共振' }
-const TC = { LIMIT_UP:'l', VOLUME_SPIKE:'v', MA_BREAKOUT:'m', MACD_CROSS:'m', MACD_DIVERGENCE:'m', CONSECUTIVE:'m', RESONANCE:'r' }
+const TN = { LIMIT_UP:'N字涨停', VOLUME_SPIKE:'爆量', MA_BREAKOUT:'均线', MACD_CROSS:'MACD', MACD_DIVERGENCE:'底背离', CONSECUTIVE:'连板', RESONANCE:'共振', BIG_MONEY:'大单', PULLBACK:'回踩' }
+const TC = { LIMIT_UP:'l', VOLUME_SPIKE:'v', MA_BREAKOUT:'m', MACD_CROSS:'m', MACD_DIVERGENCE:'m', CONSECUTIVE:'m', RESONANCE:'r', BIG_MONEY:'b', PULLBACK:'p' }
 
 const BOARDS = [
   { id: 'ALL',  label: '全板' },
@@ -153,5 +153,7 @@ td { padding: 9px 10px; color: var(--text); vertical-align: middle; }
 .tag-l { background: rgba(255,69,58,.14); color: #ff6961; }
 .tag-v { background: rgba(10,132,255,.14); color: #0a84ff; }
 .tag-m { background: rgba(255,159,10,.14); color: #ff9f0a; }
+.tag-b { background: rgba(52,199,89,.14);  color: #34c759; }
+.tag-p { background: rgba(255,69,58,.14);  color: #ff6961; }
 .empty { text-align: center; padding: 40px; color: var(--text-2); }
 </style>

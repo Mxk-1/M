@@ -23,4 +23,7 @@ STRATEGY_PARAMS = {
     "MACD_DIVERGENCE": {"lookback": 30, "local_window": 4},
     "CONSECUTIVE": {"min_boards": 2},
     "RESONANCE": {"min_strategies": 2},
+    "BIG_MONEY": {"net_ratio_min": 0.08, "pct_min": 1.0, "amount_min": 5000},
+    "PULLBACK":  {"limit_threshold": 9.5, "max_pullback": 0.15, "vol_shrink": 0.7,
+                  "vol_expand": 1.3, "pct_today": 1.5},
 }
