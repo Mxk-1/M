@@ -139,6 +139,24 @@ td{padding:10px 10px;color:var(--text);vertical-align:middle}
 .tag-m{background:rgba(255,159,10,.14);color:#ff9f0a}
 .board-badge{display:inline-block;background:rgba(255,159,10,.18);color:#ff9f0a;border-radius:5px;padding:2px 6px;font-size:10px;font-weight:700}
 .loading{color:var(--text-2);text-align:center;padding:40px;font-size:14px}
+/* 行可点击 */
+tbody tr{cursor:pointer}
+
+/* ── K线 Modal ── */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg-sidebar);border:1px solid var(--border);border-radius:16px;width:min(900px,94vw);max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.4)}
+.modal-header{padding:16px 20px;display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--border);flex-shrink:0}
+.modal-title{font-size:17px;font-weight:600}
+.modal-sub{font-size:12px;color:var(--text-2);margin-top:3px}
+.modal-close{background:var(--bg-card);border:1px solid var(--border-card);border-radius:50%;width:28px;height:28px;cursor:pointer;font-size:16px;color:var(--text-2);display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.modal-close:hover{color:var(--text);background:var(--bg-row-hover)}
+.modal-toolbar{padding:10px 20px;display:flex;gap:8px;align-items:center;border-bottom:1px solid var(--border);flex-shrink:0}
+.period-btn{background:var(--bg-card);border:1px solid var(--border-card);border-radius:7px;padding:4px 12px;cursor:pointer;font-size:12px;color:var(--text-2);transition:all .15s}
+.period-btn.active{background:rgba(10,132,255,.15);border-color:rgba(10,132,255,.4);color:#0a84ff}
+.modal-tooltip{margin-left:auto;font-size:11px;color:var(--text-2);font-variant-numeric:tabular-nums;min-height:16px}
+.chart-wrap{position:relative;flex:1;min-height:0;padding:16px 20px 12px}
+.chart-canvas{position:absolute;top:0;left:0;width:100%;height:100%}
 </style>
 </head>
 <body>
@@ -218,6 +236,29 @@ td{padding:10px 10px;color:var(--text);vertical-align:middle}
           <tbody id="sigBody"><tr><td colspan="7" class="loading">加载中...</td></tr></tbody>
         </table>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- K线 Modal -->
+<div class="modal-overlay" id="klineModal" onclick="closeKline(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <div>
+        <div class="modal-title" id="klineTitle">—</div>
+        <div class="modal-sub" id="klineSub">—</div>
+      </div>
+      <button class="modal-close" onclick="closeKlineBtn()">✕</button>
+    </div>
+    <div class="modal-toolbar">
+      <button class="period-btn active" data-days="60"  onclick="setPeriod(this)">60日</button>
+      <button class="period-btn"        data-days="120" onclick="setPeriod(this)">120日</button>
+      <button class="period-btn"        data-days="250" onclick="setPeriod(this)">250日</button>
+      <span class="modal-tooltip" id="klineTip"></span>
+    </div>
+    <div class="chart-wrap" id="chartWrap">
+      <canvas id="cvBase" class="chart-canvas"></canvas>
+      <canvas id="cvCross" class="chart-canvas" style="pointer-events:auto"></canvas>
     </div>
   </div>
 </div>
@@ -316,7 +357,7 @@ function renderMarket(){
       const u=r.pct_chg>0,d=r.pct_chg<0;
       const cls=u?'up':d?'dn':'flat';
       const sign=u?'+':''
-      return`<tr>
+      return`<tr onclick="openKline('${r.ts_code}','${r.name}')">
         <td style="color:var(--text-2);font-size:12px">${i+1}</td>
         <td><div class="sn">${r.name}</div><div class="sc">${r.ts_code}</div></td>
         <td class="${cls}" style="font-weight:600;font-variant-numeric:tabular-nums">${sign}${r.pct_chg.toFixed(2)}%</td>
@@ -342,7 +383,7 @@ function renderSignals(id){
       const tags=s.triggered.map(t=>`<span class="tag tag-${TC[t]||'m'}">${TN[t]||t}</span>`).join('');
       const board=s.boards>=2?`<span class="board-badge">${s.boards}板</span>`:`<span style="color:var(--text-2)">—</span>`;
       const u=s.pct_chg>=0;
-      return`<tr>
+      return`<tr onclick="openKline('${s.ts_code}','${s.name}')">
         <td style="color:var(--text-2);font-size:12px">${i+1}</td>
         <td><div class="sn">${s.name}</div><div class="sc">${s.ts_code}</div></td>
         <td class="${u?'up':'dn'}" style="font-weight:600;font-variant-numeric:tabular-nums">${u?'+':''}${s.pct_chg.toFixed(2)}%</td>
@@ -393,6 +434,207 @@ function renderSectors(sectors){
       <span class="sc-pct ${s.pct_chg>=0?'up':'dn'}">${s.pct_chg>=0?'+':''}${s.pct_chg.toFixed(1)}%</span>
     </div>`;
   }).join('');
+}
+
+/* ── K线图 ── */
+let klineData=[], klineDays=60, klineCode='', klineName='';
+
+async function openKline(tsCode, name){
+  klineCode=tsCode; klineName=name;
+  document.getElementById('klineTitle').textContent=name;
+  document.getElementById('klineSub').textContent=tsCode;
+  document.getElementById('klineModal').classList.add('open');
+  await loadKline();
+}
+async function loadKline(){
+  document.getElementById('klineTip').textContent='加载中...';
+  const data=await fetch(`/api/kline/${klineCode}?days=${klineDays}`).then(r=>r.json());
+  klineData=data;
+  drawKline();
+}
+function setPeriod(btn){
+  document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  klineDays=parseInt(btn.dataset.days);
+  loadKline();
+}
+function closeKline(e){if(e.target===document.getElementById('klineModal'))closeKlineBtn();}
+function closeKlineBtn(){document.getElementById('klineModal').classList.remove('open');}
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeKlineBtn();});
+
+function drawKline(){
+  const wrap=document.getElementById('chartWrap');
+  const W=wrap.clientWidth, H=wrap.clientHeight;
+  const dpr=window.devicePixelRatio||1;
+  ['cvBase','cvCross'].forEach(id=>{
+    const c=document.getElementById(id);
+    c.width=W*dpr; c.height=H*dpr;
+    c.style.width=W+'px'; c.style.height=H+'px';
+    c.getContext('2d').scale(dpr,dpr);
+  });
+
+  const data=klineData;
+  if(!data.length)return;
+
+  const isDark=document.documentElement.getAttribute('data-theme')==='dark'
+    ||(document.documentElement.getAttribute('data-theme')==='auto'&&window.matchMedia('(prefers-color-scheme:dark)').matches);
+
+  const PAD={top:24,right:60,bottom:56,left:8};
+  const VPAD=0.06; // 上下各留 6% 空间
+  const VOL_H=Math.floor(H*0.2); // 底部 20% 给成交量
+
+  const priceH=H-PAD.top-PAD.bottom-VOL_H-8;
+  const chartW=W-PAD.left-PAD.right;
+
+  // 计算价格范围
+  const highs=data.map(d=>d.high), lows=data.map(d=>d.low);
+  const maxP=Math.max(...highs), minP=Math.min(...lows);
+  const range=maxP-minP||1;
+  const padP=range*VPAD;
+  const pHigh=maxP+padP, pLow=minP-padP;
+
+  // 成交量范围
+  const maxVol=Math.max(...data.map(d=>d.vol))||1;
+
+  const cvs=document.getElementById('cvBase');
+  const ctx=cvs.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  // 颜色
+  const C={
+    up:   '#30d158',
+    dn:   '#ff453a',
+    grid: isDark?'rgba(255,255,255,.06)':'rgba(0,0,0,.06)',
+    text: isDark?'#636366':'#8e8e93',
+    bg:   isDark?'#1c1c1e':'#ffffff',
+  };
+
+  // 坐标转换
+  const toX=i=>PAD.left+chartW*(i+0.5)/data.length;
+  const toY=p=>PAD.top+priceH*(1-(p-pLow)/(pHigh-pLow));
+  const toVolY=v=>H-PAD.bottom-(VOL_H*(v/maxVol));
+
+  // 背景
+  ctx.fillStyle=C.bg;
+  ctx.fillRect(0,0,W,H);
+
+  // 水平网格 + 价格标签（5条）
+  ctx.font=`10px -apple-system,sans-serif`;
+  ctx.fillStyle=C.text;
+  ctx.textAlign='right';
+  for(let i=0;i<=4;i++){
+    const p=pLow+(pHigh-pLow)*i/4;
+    const y=toY(p);
+    ctx.strokeStyle=C.grid; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(PAD.left,y); ctx.lineTo(W-PAD.right,y); ctx.stroke();
+    ctx.fillText(p.toFixed(2),W-4,y+3.5);
+  }
+
+  // 垂直网格（每隔 ~20 根）
+  const step=Math.max(1,Math.floor(data.length/6));
+  for(let i=0;i<data.length;i+=step){
+    const x=toX(i);
+    ctx.strokeStyle=C.grid; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(x,PAD.top); ctx.lineTo(x,H-PAD.bottom); ctx.stroke();
+    // 日期标签
+    const ds=String(data[i].date);
+    ctx.fillStyle=C.text; ctx.textAlign='center';
+    ctx.fillText(`${ds.slice(4,6)}/${ds.slice(6)}`,x,H-PAD.bottom+14);
+  }
+
+  // 蜡烛宽度
+  const cw=Math.max(1,Math.floor(chartW/data.length*0.7));
+
+  data.forEach((d,i)=>{
+    const x=toX(i);
+    const isUp=d.close>=d.open;
+    const col=isUp?C.up:C.dn;
+    ctx.strokeStyle=col; ctx.fillStyle=col;
+
+    // 影线
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(x,toY(d.high));
+    ctx.lineTo(x,toY(d.low));
+    ctx.stroke();
+
+    // 实体
+    const yO=toY(d.open), yC=toY(d.close);
+    const rectY=Math.min(yO,yC);
+    const rectH=Math.max(1,Math.abs(yO-yC));
+    if(isUp){ctx.strokeRect(x-cw/2,rectY,cw,rectH);}
+    else{ctx.fillRect(x-cw/2,rectY,cw,rectH);}
+
+    // 成交量
+    const vx=x, vy=toVolY(d.vol);
+    ctx.fillStyle=isUp?'rgba(48,209,88,.5)':'rgba(255,69,58,.5)';
+    ctx.fillRect(vx-cw/2,vy,cw,H-PAD.bottom-vy);
+  });
+
+  // 隔离线
+  ctx.strokeStyle=isDark?'rgba(255,255,255,.08)':'rgba(0,0,0,.08)';
+  ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(PAD.left,H-PAD.bottom-VOL_H);
+  ctx.lineTo(W-PAD.right,H-PAD.bottom-VOL_H);
+  ctx.stroke();
+
+  // 十字准线层
+  const cv2=document.getElementById('cvCross');
+  cv2.onmousemove=e=>drawCross(e,data,W,H,PAD,priceH,VOL_H,pHigh,pLow,maxVol,isDark,toX,toY,toVolY,cw,chartW);
+  cv2.onmouseleave=()=>{
+    document.getElementById('cvCross').getContext('2d').clearRect(0,0,W,H);
+    document.getElementById('klineTip').textContent='';
+  };
+  document.getElementById('klineTip').textContent='';
+}
+
+function drawCross(e,data,W,H,PAD,priceH,VOL_H,pHigh,pLow,maxVol,isDark,toX,toY,toVolY,cw,chartW){
+  const rect=e.target.getBoundingClientRect();
+  const mx=(e.clientX-rect.left), my=(e.clientY-rect.top);
+  const idx=Math.round((mx-PAD.left)/chartW*data.length-0.5);
+  if(idx<0||idx>=data.length)return;
+  const d=data[idx];
+  const x=toX(idx);
+
+  const cv2=document.getElementById('cvCross');
+  const ctx=cv2.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  ctx.clearRect(0,0,W*dpr,H*dpr);
+
+  const lineCol=isDark?'rgba(255,255,255,.3)':'rgba(0,0,0,.25)';
+  ctx.strokeStyle=lineCol; ctx.lineWidth=1; ctx.setLineDash([3,3]);
+
+  // 垂直线
+  ctx.beginPath(); ctx.moveTo(x,PAD.top); ctx.lineTo(x,H-PAD.bottom); ctx.stroke();
+  // 水平线（跟随鼠标价格）
+  if(my>PAD.top && my<H-PAD.bottom){
+    ctx.beginPath(); ctx.moveTo(PAD.left,my); ctx.lineTo(W-PAD.right,my); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  // 价格标注（右侧）
+  const price=pLow+(pHigh-pLow)*(1-(my-PAD.top)/priceH);
+  if(my>PAD.top && my<PAD.top+priceH){
+    ctx.fillStyle=isDark?'#3a3a3c':'#e5e5ea';
+    ctx.fillRect(W-PAD.right,my-9,PAD.right-2,18);
+    ctx.fillStyle=isDark?'#f5f5f7':'#1d1d1f';
+    ctx.font='10px -apple-system,sans-serif'; ctx.textAlign='right';
+    ctx.fillText(price.toFixed(2),W-4,my+3.5);
+  }
+
+  // tooltip
+  const ds=String(d.date);
+  const fmt=v=>v>=1e8?`${(v/1e8).toFixed(1)}亿`:v>=1e4?`${(v/1e4).toFixed(0)}万`:v;
+  const sign=d.pct_chg>=0?'+':'';
+  document.getElementById('klineTip').innerHTML=
+    `${ds.slice(0,4)}-${ds.slice(4,6)}-${ds.slice(6)} &nbsp;`+
+    `开 <b>${d.open.toFixed(2)}</b> &nbsp;`+
+    `高 <b>${d.high.toFixed(2)}</b> &nbsp;`+
+    `低 <b>${d.low.toFixed(2)}</b> &nbsp;`+
+    `收 <b style="color:${d.close>=d.open?'#30d158':'#ff453a'}">${d.close.toFixed(2)}</b> &nbsp;`+
+    `<span style="color:${d.pct_chg>=0?'#30d158':'#ff453a'}">${sign}${d.pct_chg.toFixed(2)}%</span> &nbsp;`+
+    `量 ${fmt(d.vol)}`;
 }
 
 /* ── 初始化 ── */

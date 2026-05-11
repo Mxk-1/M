@@ -72,6 +72,32 @@ def get_sectors(date: int):
     ]
 
 
+@router.get("/api/kline/{ts_code}")
+def get_kline(ts_code: str, days: int = 120):
+    con = get_web_conn()
+    rows = con.execute("""
+        SELECT trade_date, open, high, low, close, vol, amount, pct_chg
+        FROM daily
+        WHERE ts_code = ?
+        ORDER BY trade_date DESC
+        LIMIT ?
+    """, [ts_code, days]).fetchall()
+    rows = list(reversed(rows))
+    return [
+        {
+            "date":     r[0],
+            "open":     r[1],
+            "high":     r[2],
+            "low":      r[3],
+            "close":    r[4],
+            "vol":      r[5],
+            "amount":   r[6],
+            "pct_chg":  r[7],
+        }
+        for r in rows
+    ]
+
+
 @router.get("/api/stocks/{date}")
 def get_stocks(date: int):
     con = get_web_conn()
