@@ -20,9 +20,9 @@ def get_conn(path: str | None = None) -> duckdb.DuckDBPyConnection:
 
 
 def get_web_conn() -> duckdb.DuckDBPyConnection:
-    """每个线程独立的只读连接，供 Web API 并发使用。"""
+    """每个线程独立连接，供 Web API 并发使用。"""
     if not hasattr(_thread_local, "conn") or _thread_local.conn is None:
-        _thread_local.conn = duckdb.connect(str(DB_PATH), read_only=True)
+        _thread_local.conn = duckdb.connect(str(DB_PATH))
     return _thread_local.conn
 
 
