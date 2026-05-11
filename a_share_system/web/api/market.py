@@ -71,3 +71,34 @@ def get_sectors(date: int):
         {"name": r[0], "pct_chg": round(r[1], 2), "stock_count": r[2]}
         for r in rows
     ]
+
+
+@router.get("/api/stocks/{date}")
+def get_stocks(date: int):
+    rows = _con.execute(f"""
+        SELECT d.ts_code,
+               COALESCE(sb.name, d.ts_code) AS name,
+               COALESCE(sb.industry, '') AS industry,
+               d.close, d.pct_chg, d.vol, d.amount,
+               d.open, d.high, d.low, d.pre_close
+        FROM daily d
+        LEFT JOIN stock_basic sb ON d.ts_code = sb.ts_code
+        WHERE d.trade_date = {date}
+        ORDER BY d.pct_chg DESC
+    """).fetchall()
+    return [
+        {
+            "ts_code":   r[0],
+            "name":      r[1],
+            "industry":  r[2],
+            "close":     r[3],
+            "pct_chg":   r[4],
+            "vol":       r[5],
+            "amount":    r[6],
+            "open":      r[7],
+            "high":      r[8],
+            "low":       r[9],
+            "pre_close": r[10],
+        }
+        for r in rows
+    ]
