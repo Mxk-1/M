@@ -297,9 +297,9 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
       <div class="modal-toolbar">
         <!-- 时间范围 -->
         <div class="btn-group">
-          <button v-for="d in [120, 250, 500]" :key="d"
-            class="tool-btn" :class="{ active: days === d }"
-            @click="setPeriod(d)">{{ d === 500 ? '全部' : d + '日' }}</button>
+          <button v-for="item in [{d:120,label:'120日'},{d:250,label:'250日'},{d:0,label:'全部'}]" :key="item.d"
+            class="tool-btn" :class="{ active: days === item.d }"
+            @click="setPeriod(item.d)">{{ item.label }}</button>
         </div>
 
         <div class="divider"></div>
