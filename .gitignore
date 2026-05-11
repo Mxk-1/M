@@ -1,2 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.DS_Store
+
+# DuckDB 数据文件
+*.duckdb
+*.duckdb.wal
+
+# Tushare 历史数据（大文件）
+tushare/
+tushare_data_2021_2026.zip
+a_share_trading_system_v0.5/
+a_share_trading_system_v0.5.tar.gz
+
+# 模型先生目录
+模型先生/
+
+# Vue / Node
 a_share_system/web/frontend/node_modules/
 a_share_system/web/frontend/dist/
+
+# 工具目录
+.superpowers/
+.vscode/
