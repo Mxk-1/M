@@ -19,12 +19,16 @@ def main():
         run_update(date)
 
     elif mode == "run":
+        import time
         con = get_conn()
         date = int(sys.argv[2]) if len(sys.argv) > 2 else \
                con.execute("SELECT MAX(trade_date) FROM daily").fetchone()[0]
-        print(f"扫描 {date}...")
+        d = str(date)
+        print(f"\n扫描 {d[:4]}-{d[4:6]}-{d[6:]} 全市场策略信号\n")
+        t0 = time.time()
         count = run_daily(con, date)
-        print(f"✅ 写入 {count} 个信号")
+        elapsed = time.time() - t0
+        print(f"\n✅ 共写入 {count} 条信号，耗时 {elapsed:.1f}s")
 
     elif mode == "backtest":
         from a_share_system.engine.backtest import run_backtest

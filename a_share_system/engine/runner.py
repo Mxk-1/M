@@ -41,18 +41,43 @@ def save_signals(con: duckdb.DuckDBPyConnection, signals: list[Signal]) -> None:
 
 
 def run_daily(con: duckdb.DuckDBPyConnection, trade_date: int) -> int:
+    import time
+    import sys
+
     all_signals: list[Signal] = []
-    for strategy in STRATEGIES:
+    total = len(STRATEGIES) + 1   # +1 for resonance
+    width = max(len(s.display_name) for s in STRATEGIES) + 2
+
+    t0_total = time.time()
+
+    for i, strategy in enumerate(STRATEGIES, 1):
+        label = f"{strategy.display_name}"
+        # 打印进度前缀
+        bar = f"[{i:2d}/{total}]"
+        print(f"  {bar} {label:<{width}} ...", end="", flush=True)
+        t0 = time.time()
         try:
             found = strategy.scan(con, trade_date)
             all_signals.extend(found)
+            elapsed = time.time() - t0
+            print(f"\r  {bar} {label:<{width}} {len(found):4d} 条  {elapsed:.1f}s")
         except Exception as e:
-            print(f"  ⚠ {strategy.name} 出错: {e}")
+            elapsed = time.time() - t0
+            print(f"\r  {bar} {label:<{width}} ⚠ 出错: {e}")
 
+    # 共振
+    bar = f"[{total:2d}/{total}]"
+    label = "多策略共振"
+    print(f"  {bar} {label:<{width}} ...", end="", flush=True)
+    t0 = time.time()
     resonance = ResonanceStrategy().detect(all_signals)
     all_signals.extend(resonance)
+    elapsed = time.time() - t0
+    print(f"\r  {bar} {label:<{width}} {len(resonance):4d} 条  {elapsed:.1f}s")
 
+    print(f"  {'─'*40}")
     save_signals(con, all_signals)
+    total_time = time.time() - t0_total
     return len(all_signals)
 
 
