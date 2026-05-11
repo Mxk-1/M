@@ -16,6 +16,8 @@ const BOARDS = [
   { id: 'GEM',  label: '创业板' },
   { id: 'STAR', label: '科创板' },
   { id: 'BSE',  label: '北交所' },
+  { id: 'ST',   label: 'ST' },
+  { id: 'NONST',label: '非ST' },
 ]
 
 function getBoard(code) {
@@ -31,11 +33,10 @@ const filtered = computed(() => {
   if (q) rows = rows.filter(r => r.name.includes(q) || r.ts_code.toLowerCase().includes(q))
 
   if (board.value !== 'ALL') {
-    if (board.value === 'MAIN') {
-      rows = rows.filter(r => !getBoard(r.ts_code) && !r.ts_code.endsWith('.BJ'))
-    } else {
-      rows = rows.filter(r => getBoard(r.ts_code)?.id === board.value)
-    }
+    if (board.value === 'MAIN')  rows = rows.filter(r => !getBoard(r.ts_code) && !r.ts_code.endsWith('.BJ'))
+    else if (board.value === 'ST')    rows = rows.filter(r => r.name.includes('ST'))
+    else if (board.value === 'NONST') rows = rows.filter(r => !r.name.includes('ST'))
+    else rows = rows.filter(r => getBoard(r.ts_code)?.id === board.value)
   }
 
   return rows

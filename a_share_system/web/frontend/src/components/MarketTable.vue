@@ -21,6 +21,8 @@ const DIR_FILTERS = [
   { id: 'UP',    label: '上涨' },
   { id: 'DOWN',  label: '下跌' },
   { id: 'LIMIT', label: '涨停' },
+  { id: 'ST',    label: 'ST' },
+  { id: 'NONST', label: '非ST' },
 ]
 
 function getBoard(code) {
@@ -47,6 +49,8 @@ const filtered = computed(() => {
   if (filter.value === 'UP')    rows = rows.filter(r => r.pct_chg > 0)
   if (filter.value === 'DOWN')  rows = rows.filter(r => r.pct_chg < 0)
   if (filter.value === 'LIMIT') rows = rows.filter(r => r.pct_chg >= 9.5)
+  if (filter.value === 'ST')    rows = rows.filter(r => r.name.includes('ST'))
+  if (filter.value === 'NONST') rows = rows.filter(r => !r.name.includes('ST'))
 
   if (board.value !== 'ALL') {
     if (board.value === 'MAIN') {
