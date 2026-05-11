@@ -145,7 +145,7 @@ tbody tr{cursor:pointer}
 /* ── K线 Modal ── */
 .modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
 .modal-overlay.open{display:flex}
-.modal{background:var(--bg-sidebar);border:1px solid var(--border);border-radius:16px;width:min(900px,94vw);max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.4)}
+.modal{background:var(--bg-sidebar);border:1px solid var(--border);border-radius:16px;width:min(900px,94vw);height:min(600px,90vh);display:flex;flex-direction:column;overflow:hidden;box-shadow:0 24px 80px rgba(0,0,0,.4)}
 .modal-header{padding:16px 20px;display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid var(--border);flex-shrink:0}
 .modal-title{font-size:17px;font-weight:600}
 .modal-sub{font-size:12px;color:var(--text-2);margin-top:3px}
@@ -444,13 +444,14 @@ async function openKline(tsCode, name){
   document.getElementById('klineTitle').textContent=name;
   document.getElementById('klineSub').textContent=tsCode;
   document.getElementById('klineModal').classList.add('open');
+  await new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r)));
   await loadKline();
 }
 async function loadKline(){
   document.getElementById('klineTip').textContent='加载中...';
   const data=await fetch(`/api/kline/${klineCode}?days=${klineDays}`).then(r=>r.json());
   klineData=data;
-  drawKline();
+  requestAnimationFrame(()=>requestAnimationFrame(drawKline));
 }
 function setPeriod(btn){
   document.querySelectorAll('.period-btn').forEach(b=>b.classList.remove('active'));
@@ -465,6 +466,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeKlineBtn();});
 function drawKline(){
   const wrap=document.getElementById('chartWrap');
   const W=wrap.clientWidth, H=wrap.clientHeight;
+  if(!W||!H){requestAnimationFrame(drawKline);return;}
   const dpr=window.devicePixelRatio||1;
   ['cvBase','cvCross'].forEach(id=>{
     const c=document.getElementById(id);
