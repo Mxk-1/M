@@ -23,6 +23,10 @@ def create_app(con: duckdb.DuckDBPyConnection) -> FastAPI:
     def index():
         return FileResponse(str(static_dir / "index.html"))
 
+    @app.get("/favicon.ico", include_in_schema=False)
+    def favicon():
+        return FileResponse(str(static_dir / "favicon.ico"))
+
     return app
 
 

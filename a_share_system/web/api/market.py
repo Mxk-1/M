@@ -14,7 +14,7 @@ def set_conn(con: duckdb.DuckDBPyConnection):
 @router.get("/api/dates")
 def get_dates():
     rows = _con.execute(
-        "SELECT DISTINCT trade_date FROM daily ORDER BY trade_date DESC LIMIT 100"
+        "SELECT DISTINCT trade_date FROM signals ORDER BY trade_date DESC LIMIT 100"
     ).fetchall()
     return [r[0] for r in rows]
 
