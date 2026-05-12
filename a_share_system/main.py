@@ -42,8 +42,17 @@ def main():
         print("启动 http://localhost:8080")
         uvicorn.run(app, host="0.0.0.0", port=8080)
 
+    elif mode == "news":
+        # news import — 从内置列表写入新闻
+        from a_share_system.data.news import save_news
+        from a_share_system.data.news_seed import SEED_NEWS
+        con = get_conn()
+        init_schema(con)
+        n = save_news(con, SEED_NEWS)
+        print(f"✅ 写入 {n} 条新闻（已存在的跳过）")
+
     else:
-        print("用法: python main.py [migrate|update|run|backtest|serve]")
+        print("用法: python main.py [migrate|update|run|backtest|serve|news]")
 
 
 if __name__ == "__main__":

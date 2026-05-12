@@ -9,6 +9,8 @@ from a_share_system.engine.strategies.macd_cross import MacdCrossStrategy
 from a_share_system.engine.strategies.macd_divergence import MacdDivergenceStrategy
 from a_share_system.engine.strategies.big_money import BigMoneyStrategy
 from a_share_system.engine.strategies.pullback import PullbackStrategy
+from a_share_system.engine.strategies.sector_hot import SectorHotStrategy
+from a_share_system.engine.strategies.top_list_buy import TopListBuyStrategy
 from a_share_system.engine.strategies.resonance import ResonanceStrategy
 
 STRATEGIES = [
@@ -20,6 +22,8 @@ STRATEGIES = [
     MacdDivergenceStrategy(),
     BigMoneyStrategy(),
     PullbackStrategy(),
+    SectorHotStrategy(),
+    TopListBuyStrategy(),
 ]
 
 

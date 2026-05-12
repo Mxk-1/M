@@ -7,6 +7,7 @@ const emit = defineEmits(['close'])
 const klineData = ref([])
 const days = ref(250)
 const tip = ref('')
+const snapTip = ref('')
 const activeQ = ref(0)   // 0=全部, 1~4=季度
 const chartWrap = ref(null)
 const cvBase = ref(null)
@@ -209,8 +210,7 @@ function draw() {
     // 实体
     const yO = toY(d.open), yC = toY(d.close)
     const rectY = Math.min(yO, yC), rectH = Math.max(1, Math.abs(yO - yC))
-    if (isUp) ctx.strokeRect(x - cw / 2, rectY, cw, rectH)
-    else      ctx.fillRect(x - cw / 2, rectY, cw, rectH)
+    ctx.fillRect(x - cw / 2, rectY, cw, rectH)
 
     // 成交量
     ctx.fillStyle = isUp ? 'rgba(48,209,88,.5)' : 'rgba(255,69,58,.5)'
@@ -278,6 +278,52 @@ function drawCross(e, data, W, H, PAD, priceH, pHigh, pLow, toX, toY, chartW, da
   tip.value = `${ds.slice(0,4)}-${ds.slice(4,6)}-${ds.slice(6)} ${qLabel}　开 ${d.open.toFixed(2)}  高 ${d.high.toFixed(2)}  低 ${d.low.toFixed(2)}  收 ${d.close.toFixed(2)}  ${sign}${d.pct_chg.toFixed(2)}%  量 ${fmt(d.vol)}`
 }
 
+function captureChart() {
+  const base = cvBase.value
+  if (!base) return
+  const dark = isDark()
+  const dpr = window.devicePixelRatio || 1
+  const W = base.width, H = base.height
+  const HDR = Math.round(44 * dpr)
+
+  const out = document.createElement('canvas')
+  out.width = W; out.height = H + HDR
+  const ctx = out.getContext('2d')
+
+  // 背景 + 标题栏
+  ctx.fillStyle = dark ? '#1c1c1e' : '#ffffff'
+  ctx.fillRect(0, 0, W, H + HDR)
+
+  ctx.fillStyle = dark ? '#f5f5f7' : '#1d1d1f'
+  ctx.font = `bold ${Math.round(14 * dpr)}px -apple-system,sans-serif`
+  ctx.textAlign = 'left'
+  ctx.fillText(`${props.name}  ${props.tsCode}`, Math.round(18 * dpr), Math.round(28 * dpr))
+
+  const now = new Date()
+  const ds = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`
+  ctx.font = `${Math.round(11 * dpr)}px -apple-system,sans-serif`
+  ctx.fillStyle = dark ? '#636366' : '#8e8e93'
+  ctx.textAlign = 'right'
+  ctx.fillText(ds, W - Math.round(18 * dpr), Math.round(28 * dpr))
+
+  // 分隔线
+  ctx.strokeStyle = dark ? 'rgba(255,255,255,.08)' : 'rgba(0,0,0,.08)'
+  ctx.lineWidth = dpr
+  ctx.beginPath(); ctx.moveTo(0, HDR); ctx.lineTo(W, HDR); ctx.stroke()
+
+  // K 线主图
+  ctx.drawImage(base, 0, HDR)
+
+  out.toBlob(async blob => {
+    try {
+      await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+      snapTip.value = '已复制'; setTimeout(() => snapTip.value = '', 2000)
+    } catch {
+      snapTip.value = '复制失败'; setTimeout(() => snapTip.value = '', 2000)
+    }
+  }, 'image/png')
+}
+
 function onKeydown(e) { if (e.key === 'Escape') emit('close') }
 onMounted(() => { document.addEventListener('keydown', onKeydown); load() })
 onUnmounted(() => document.removeEventListener('keydown', onKeydown))
@@ -313,6 +359,14 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
         </div>
 
         <span class="tip">{{ tip }}</span>
+
+        <button class="tool-btn snap-btn" :class="{ snapped: snapTip === '已复制' }" @click="captureChart" title="复制截图到剪贴板">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+            <circle cx="12" cy="13" r="4"/>
+          </svg>
+          <span v-if="snapTip" class="snap-tip">{{ snapTip }}</span>
+        </button>
       </div>
 
       <div class="chart-wrap" ref="chartWrap">
@@ -369,7 +423,11 @@ onUnmounted(() => document.removeEventListener('keydown', onKeydown))
 .q-btn.active:nth-of-type(3) { background: rgba(255,159,10,.12); border-color: rgba(255,159,10,.35); color: #ff9f0a; }
 .q-btn.active:nth-of-type(4) { background: rgba(191,90,242,.12); border-color: rgba(191,90,242,.35); color: #bf5af2; }
 .divider { width: 1px; height: 18px; background: var(--border); flex-shrink: 0; }
-.tip { margin-left: auto; font-size: 11px; color: var(--text-2); font-variant-numeric: tabular-nums; min-height: 15px; }
+.tip { flex: 1; font-size: 11px; color: var(--text-2); font-variant-numeric: tabular-nums; min-height: 15px; }
+.snap-btn { padding: 4px 7px; display: flex; align-items: center; gap: 5px; color: var(--text-2); flex-shrink: 0; }
+.snap-btn:hover { color: #0a84ff; border-color: rgba(10,132,255,.4); background: rgba(10,132,255,.08); }
+.snap-btn.snapped { color: #30d158; border-color: rgba(48,209,88,.4); background: rgba(48,209,88,.1); }
+.snap-tip { font-size: 11px; }
 .chart-wrap { position: relative; flex: 1; min-height: 0; padding: 12px 16px 8px; }
 .canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
 .cross { pointer-events: auto; }

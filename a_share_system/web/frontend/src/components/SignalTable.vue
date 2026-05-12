@@ -7,8 +7,8 @@ const emit = defineEmits(['open-kline'])
 const search = ref('')
 const board  = ref('ALL')
 
-const TN = { LIMIT_UP:'N字涨停', VOLUME_SPIKE:'爆量', MA_BREAKOUT:'均线', MACD_CROSS:'MACD', MACD_DIVERGENCE:'底背离', CONSECUTIVE:'连板', RESONANCE:'共振', BIG_MONEY:'大单', PULLBACK:'回踩' }
-const TC = { LIMIT_UP:'l', VOLUME_SPIKE:'v', MA_BREAKOUT:'m', MACD_CROSS:'m', MACD_DIVERGENCE:'m', CONSECUTIVE:'m', RESONANCE:'r', BIG_MONEY:'b', PULLBACK:'p' }
+const TN = { LIMIT_UP:'N字涨停', VOLUME_SPIKE:'爆量', MA_BREAKOUT:'均线', MACD_CROSS:'MACD', MACD_DIVERGENCE:'底背离', CONSECUTIVE:'连板', RESONANCE:'共振', BIG_MONEY:'大单', PULLBACK:'回踩', SECTOR_HOT:'板块联动', TOP_LIST:'龙虎榜' }
+const TC = { LIMIT_UP:'l', VOLUME_SPIKE:'v', MA_BREAKOUT:'m', MACD_CROSS:'m', MACD_DIVERGENCE:'m', CONSECUTIVE:'m', RESONANCE:'r', BIG_MONEY:'b', PULLBACK:'p', SECTOR_HOT:'s', TOP_LIST:'t' }
 
 const BOARDS = [
   { id: 'ALL',  label: '全板' },
@@ -155,5 +155,7 @@ td { padding: 9px 10px; color: var(--text); vertical-align: middle; }
 .tag-m { background: rgba(255,159,10,.14); color: #ff9f0a; }
 .tag-b { background: rgba(52,199,89,.14);  color: #34c759; }
 .tag-p { background: rgba(255,69,58,.14);  color: #ff6961; }
+.tag-s { background: rgba(90,200,250,.14); color: #5ac8fa; }
+.tag-t { background: rgba(255,214,10,.18); color: #b8860b; }
 .empty { text-align: center; padding: 40px; color: var(--text-2); }
 </style>

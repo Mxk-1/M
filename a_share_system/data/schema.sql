@@ -58,6 +58,17 @@ CREATE TABLE IF NOT EXISTS stock_basic (
     list_date INTEGER
 );
 
+CREATE TABLE IF NOT EXISTS news (
+    url        VARCHAR PRIMARY KEY,
+    ts_code    VARCHAR,
+    pub_date   VARCHAR,
+    title      VARCHAR NOT NULL,
+    source     VARCHAR,
+    summary    VARCHAR,
+    keyword    VARCHAR,
+    saved_at   VARCHAR
+);
+
 CREATE TABLE IF NOT EXISTS signals (
     ts_code    VARCHAR  NOT NULL,
     trade_date INTEGER  NOT NULL,

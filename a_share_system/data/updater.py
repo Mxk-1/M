@@ -83,6 +83,26 @@ def update_moneyflow(con, trade_date: str) -> int:
         return 0
 
 
+def update_top_list(con, trade_date: str) -> int:
+    pro = get_pro()
+    try:
+        df = pro.top_list(trade_date=trade_date)
+        if df is None or df.empty:
+            return 0
+        rows = [
+            [r.ts_code, int(r.trade_date),
+             float(r.get("net_amount", 0) or 0),
+             str(r.get("reason", "") or "")]
+            for _, r in df.iterrows()
+        ]
+        con.executemany("INSERT OR IGNORE INTO top_list VALUES (?,?,?,?)", rows)
+        print(f"  top_list {trade_date}: +{len(rows)} 行")
+        return len(rows)
+    except Exception as e:
+        print(f"  ⚠ top_list {trade_date} 失败: {e}")
+        return 0
+
+
 def update_limit_list(con, trade_date: str) -> int:
     pro = get_pro()
     try:
@@ -115,6 +135,8 @@ def run_update(trade_date: str | None = None) -> None:
     update_index_daily(con, trade_date)
     time.sleep(0.5)
     update_moneyflow(con, trade_date)
+    time.sleep(0.5)
+    update_top_list(con, trade_date)
     time.sleep(0.5)
     update_limit_list(con, trade_date)
     print(f"✅ {trade_date} 更新完成")
