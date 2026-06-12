@@ -137,3 +137,94 @@ def test_macd_divergence_returns_list():
         insert_daily(con, [("600111.SH", d, p, p+1, p-1, p, p, 0.0, 0.0, 500000, 500000*p)])
     signals = MacdDivergenceStrategy().scan(con, dates[-1])
     assert isinstance(signals, list)
+
+
+# ---------- Brooks H2 ----------
+def _seed_brooks(con):
+    """构造一只上行→浅回调→H2 的合成 K 线（含 adj_factor，使 daily_qfq 可用）。"""
+    import datetime
+    bars = []          # (date, o, h, l, c, pct)
+    base = datetime.date(2026, 1, 1)
+    price = 10.0
+    seq = 0
+
+    def nextdate():
+        nonlocal seq
+        d = base + datetime.timedelta(days=seq)
+        seq += 1
+        return int(d.strftime("%Y%m%d"))
+
+    # 70 根稳步上行阳趋势棒 → EMA20 上行、always_in=LONG（满足上市≥60交易日）
+    for _ in range(70):
+        o = price
+        c = price + 0.25
+        bars.append((nextdate(), o, c + 0.03, o - 0.03, c, 2.5))
+        price = c
+    top = price
+    # 浅回调腿1（high 递减，回调 close 不破 ema20×0.97）
+    bars.append((nextdate(), top, top + 0.01, top - 0.25, top - 0.2, -1.5))
+    bars.append((nextdate(), top - 0.2, top - 0.18, top - 0.4, top - 0.35, -1.2))
+    # H1：higher-high
+    bars.append((nextdate(), top - 0.35, top + 0.08, top - 0.38, top - 0.1, 1.5))
+    # 回调新低
+    bars.append((nextdate(), top - 0.1, top - 0.05, top - 0.45, top - 0.4, -1.2))
+    # H2：higher-high，收在区间上半
+    bars.append((nextdate(), top - 0.4, top + 0.05, top - 0.42, top + 0.02, 1.5))
+
+    rows = []
+    prev_close = None
+    for d, o, h, l, c, pct in bars:
+        pre = prev_close if prev_close is not None else o
+        # daily: (ts, date, open, high, low, close, pre_close, change, pct_chg, vol, amount)
+        rows.append(("600111.SH", d, o, h, l, c, pre, c - pre, pct, 5_000_000, 2.0e8))
+        con.execute(
+            "INSERT OR IGNORE INTO adj_factor VALUES (?,?,?)", ("600111.SH", d, 1.0)
+        )
+        prev_close = c
+    insert_daily(con, rows)
+    return rows[-1][1]   # 最后一个交易日
+
+
+def test_brooks_h2_detects_h2_setup():
+    from a_share_system.engine.strategies.brooks_h2 import BrooksH2Strategy
+    con = make_db()
+    last_date = _seed_brooks(con)
+    signals = BrooksH2Strategy().scan(con, last_date)
+    assert isinstance(signals, list)
+    assert len(signals) == 1
+    s = signals[0]
+    assert s.ts_code == "600111.SH"
+    assert s.strategy == "BROOKS_H2"
+    # 风控字段齐备
+    assert "stop_price" in s.extra and "target_2r" in s.extra
+    assert s.score >= 60.0
+
+
+def test_brooks_h2_skips_st_and_low_amount():
+    from a_share_system.engine.strategies.brooks_h2 import BrooksH2Strategy
+    con = make_db()
+    # 600111 名称改成 ST → 应被过滤
+    con.execute("UPDATE stock_basic SET name='ST北方' WHERE ts_code='600111.SH'")
+    last_date = _seed_brooks(con)
+    signals = BrooksH2Strategy().scan(con, last_date)
+    assert all(s.ts_code != "600111.SH" for s in signals)
+
+
+def test_brooks_h2_returns_empty_on_downtrend():
+    from a_share_system.engine.strategies.brooks_h2 import BrooksH2Strategy
+    con = make_db()
+    rows = []
+    price = 50.0
+    prev = None
+    for i in range(70):
+        d = 20260101 + i
+        o = price
+        c = price - 0.3
+        pre = prev if prev is not None else o
+        rows.append(("600519.SH", d, o + 0.02, o + 0.02, c - 0.02, c, pre, c - pre, -2.0, 5_000_000, 2.0e8))
+        con.execute("INSERT OR IGNORE INTO adj_factor VALUES (?,?,?)", ("600519.SH", d, 1.0))
+        prev = c
+        price = c
+    insert_daily(con, rows)
+    signals = BrooksH2Strategy().scan(con, rows[-1][1])
+    assert all(s.ts_code != "600519.SH" for s in signals)

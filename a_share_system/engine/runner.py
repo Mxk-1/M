@@ -11,6 +11,7 @@ from a_share_system.engine.strategies.big_money import BigMoneyStrategy
 from a_share_system.engine.strategies.pullback import PullbackStrategy
 from a_share_system.engine.strategies.sector_hot import SectorHotStrategy
 from a_share_system.engine.strategies.top_list_buy import TopListBuyStrategy
+from a_share_system.engine.strategies.brooks_h2 import BrooksH2Strategy
 from a_share_system.engine.strategies.resonance import ResonanceStrategy
 
 STRATEGIES = [
@@ -24,6 +25,7 @@ STRATEGIES = [
     PullbackStrategy(),
     SectorHotStrategy(),
     TopListBuyStrategy(),
+    BrooksH2Strategy(),
 ]
 
 
