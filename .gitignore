@@ -8,14 +8,8 @@ __pycache__/
 *.duckdb
 *.duckdb.wal
 
-# Tushare 历史数据（大文件）
-tushare/
-tushare_data_2021_2026.zip
-a_share_trading_system_v0.5/
-a_share_trading_system_v0.5.tar.gz
-
-# 模型先生目录
-模型先生/
+# 归档目录（旧版本 / 大文件）
+archive/
 
 # Vue / Node
 a_share_system/web/frontend/node_modules/
