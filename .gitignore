@@ -18,3 +18,9 @@ a_share_system/web/frontend/dist/
 # 工具目录
 .superpowers/
 .vscode/
+
+# Kronos upstream 克隆（嵌套 git，不入 M 仓；代码已迁移至 model/kronos/）
+/Kronos/
+
+# Kronos 推理/评估输出（中间产物）
+model/kronos/outputs/

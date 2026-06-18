@@ -78,7 +78,7 @@ conda run -n mxk_env python -m a_share_system.data.backfill_moneyflow
 
 ## 数据范围
 
-- 历史数据：2021-01-04 至今，约 1315 个交易日，约 658 万行日线
+- 历史数据：2021-01-04 至今，约 1316 个交易日，约 658 万行日线
 - 数据库：`market.duckdb`（单文件，DuckDB；单写者，勿并发写）
 - 数据源：Tushare Pro API
 

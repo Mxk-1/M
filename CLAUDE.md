@@ -17,12 +17,17 @@ conda run -n mxk_env python -m a_share_system.main <serve|update|run|backtest|mi
 conda run -n mxk_env python -m a_share_system.data.backfill_<adj_factor|daily_basic|moneyflow>
 conda run -n mxk_env python -m pytest a_share_system/tests/ -x -q
 conda run -n mxk_env python scripts/backtest_brooks_h2.py [--quick]
+# Kronos 预测（权重首次运行时从 HuggingFace 下载，需代理）
+conda run -n mxk_env python Kronos/examples/predict_from_duckdb.py --code <股票代码>
+conda run -n mxk_env python Kronos/examples/baseline_eval.py          # P0 零样本基线评估
+conda run -n mxk_env python Kronos/examples/finetune_single_stock.py --code <股票代码>  # 单票微调
 ```
 
 ## 约定 / 已知情况
 
-- **目录**：`scripts/` 散装脚本与回测器 · `archive/` 旧版本（gitignore，不入库） · `docs/specs|reports` 设计与回测报告 · 大数据/媒体在仓库外 `~/Archives/`。
-- **数据缺口**：`limit_list` 接口限频严（1次/天），历史补不动，仅近期有；`top_list` 是事件表，历史稀疏。其余表（daily / daily_basic / adj_factor / index_daily / moneyflow）均 1315 交易日全覆盖。
+- **目录**：`scripts/` 散装脚本与回测器 · `archive/` 旧版本（gitignore，不入库） · `docs/specs|reports` 设计与回测报告 · 大数据/媒体在仓库外 `~/Archives/` · `Kronos/` 嵌套 git 仓（独立 upstream，不入 M 仓提交）。
+- **数据缺口**：`limit_list` 接口限频严（1次/天），历史补不动，仅近期有；`top_list` 是事件表，历史稀疏。其余表（daily / daily_basic / adj_factor / index_daily / moneyflow）均 1316 交易日全覆盖。
+- **Kronos 依赖**：`mxk_env` 已额外安装 torch / einops / safetensors / huggingface_hub / matplotlib / scipy / pyyaml / socksio（socksio 是 SOCKS 代理下 hf_hub 必需）。DB 路径固定为 `a_share_system/market.duckdb`，只读连接。
 - **预存测试失败**：`test_ma_breakout_detects_ma5_cross_ma10` 是历史遗留失败，与近期改动无关。
 - **分工偏好**：方案/设计可由当前模型出，代码实现倾向交给 Opus 4.8（见 agent 记忆）；执行终端命令需用户明确要求。
 
@@ -33,3 +38,4 @@ conda run -n mxk_env python scripts/backtest_brooks_h2.py [--quick]
 | 系统总览 / 策略清单 / 数据表 | `a_share_system/README.md` |
 | Brooks 价格行为 Phase 1 设计 | `docs/specs/2026-06-12-brooks-phase1-design.md` |
 | BROOKS_H2 回测结论（H-1~H-5） | `docs/reports/2026-06-12-brooks-h2-backtest.md` |
+| Kronos A 股微调技术方案（P0~P3） | `docs/specs/2026-06-18-kronos-ashare-finetune-design.md` |

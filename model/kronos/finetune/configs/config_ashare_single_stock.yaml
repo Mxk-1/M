@@ -1,0 +1,58 @@
+# 单票快速验证 config — Mac CPU 友好版
+# 目标：验证微调流程是否让方向命中率从零样本基线(<50%)提升到>52%
+# 用法：
+#   cd Kronos/finetune_csv
+#   conda run -n mxk_env python ../examples/finetune_single_stock.py --config configs/config_ashare_single_stock.yaml
+
+data:
+  # 由 finetune_single_stock.py 导出 DuckDB -> CSV 后自动填入，无需手动改
+  data_path: ""
+  lookback_window: 120       # 与 baseline_eval 保持一致，120 根回看
+  predict_window: 10         # 预测 10 个交易日
+  max_context: 512
+  clip: 5.0
+  train_ratio: 0.75          # ~987 根 train / ~329 根 val / 后 10% 留 test
+  val_ratio: 0.15
+  test_ratio: 0.10
+
+training:
+  tokenizer_epochs: 5        # Mac CPU 快速验证；GPU 上可改 30
+  basemodel_epochs: 5        # Mac CPU 快速验证；GPU 上可改 20
+  batch_size: 16             # CPU 内存友好
+  log_interval: 20
+  num_workers: 0             # Mac multiprocessing 坑，必须 0
+  seed: 42
+
+  tokenizer_learning_rate: 0.0002
+  predictor_learning_rate: 0.000001
+
+  adam_beta1: 0.9
+  adam_beta2: 0.95
+  adam_weight_decay: 0.1
+  accumulation_steps: 1
+
+model_paths:
+  pretrained_tokenizer: "NeoQuasar/Kronos-Tokenizer-base"
+  pretrained_predictor: "NeoQuasar/Kronos-base"
+
+  exp_name: "ashare_single_stock"
+  base_path: ""              # 由脚本动态填入（outputs/finetune/<stock>/）
+
+  base_save_path: ""
+  finetuned_tokenizer: ""
+  tokenizer_save_name: "tokenizer"
+  basemodel_save_name: "basemodel"
+
+experiment:
+  name: "kronos_ashare_single_stock"
+  description: "A-share single stock quick validation on Mac CPU"
+  use_comet: false
+  train_tokenizer: true
+  train_basemodel: true
+  skip_existing: false
+  pre_trained_tokenizer: true
+  pre_trained_predictor: true
+
+device:
+  use_cuda: false            # Mac 无 CUDA，强制 CPU
+  device_id: 0
